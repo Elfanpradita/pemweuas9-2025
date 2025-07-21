@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Admin\Resources\UserResource\Pages;
+namespace App\Filament\Admin\Resources\ObatResource\Pages;
 
-use App\Filament\Admin\Resources\UserResource;
+use App\Filament\Admin\Resources\ObatResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
-class ListUsers extends ListRecords
+class ListObats extends ListRecords
 {
-    protected static string $resource = UserResource::class;
+    protected static string $resource = ObatResource::class;
 
     protected function getHeaderActions(): array
     {
