@@ -2,41 +2,61 @@
 
 namespace App\Filament\Admin\Resources;
 
-use App\Filament\Admin\Resources\ApotekerResource\Pages;
-use App\Filament\Admin\Resources\ApotekerResource\RelationManagers;
-use App\Models\Apoteker;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Models\Toko;
+use App\Models\User;
 use Filament\Tables;
+use App\Models\Apoteker;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Resources\Resource;
+use App\Filament\Admin\Resources\ApotekerResource\Pages;
 
 class ApotekerResource extends Resource
 {
     protected static ?string $model = Apoteker::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-user-group'; // ikon diganti lebih relevan
+
+    protected static ?string $navigationLabel = 'Daftar Apoteker';
+
+    protected static ?string $pluralModelLabel = 'Apoteker';
+    protected static ?string $modelLabel = 'Apoteker';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('user_id')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('toko_id')
-                    ->required()
-                    ->numeric(),
+                Forms\Components\Select::make('user_id')
+                    ->label('User')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->required(),
+
+                Forms\Components\Select::make('toko_id')
+                    ->label('Toko')
+                    ->relationship('toko', 'nama')
+                    ->searchable()
+                    ->required(),
+
                 Forms\Components\TextInput::make('nama_lengkap')
+                    ->label('Nama Lengkap')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('jenis_kelamin')
+
+                Forms\Components\Select::make('jenis_kelamin')
+                    ->label('Jenis Kelamin')
+                    ->options([
+                        'Laki-laki' => 'Laki-laki',
+                        'Perempuan' => 'Perempuan',
+                    ])
                     ->required(),
-                Forms\Components\TextInput::make('manager_id')
-                    ->required()
-                    ->numeric(),
+
+                Forms\Components\Select::make('manager_id')
+                    ->label('Manager')
+                    ->relationship('manager', 'nama_lengkap')
+                    ->searchable()
+                    ->required(),
             ]);
     }
 
@@ -44,29 +64,35 @@ class ApotekerResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('toko_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('nama_lengkap')
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('User')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('jenis_kelamin'),
-                Tables\Columns\TextColumn::make('manager_id')
-                    ->numeric()
-                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('toko.nama')
+                    ->label('Toko')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('nama_lengkap')
+                    ->label('Nama Lengkap')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('jenis_kelamin')
+                    ->label('Jenis Kelamin'),
+
+                Tables\Columns\TextColumn::make('manager.nama_lengkap')
+                    ->label('Manager'),
+
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -81,7 +107,7 @@ class ApotekerResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            // tambahkan RelationManagers jika ada
         ];
     }
 

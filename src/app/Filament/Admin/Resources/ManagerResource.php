@@ -2,37 +2,52 @@
 
 namespace App\Filament\Admin\Resources;
 
-use App\Filament\Admin\Resources\ManagerResource\Pages;
-use App\Filament\Admin\Resources\ManagerResource\RelationManagers;
-use App\Models\Manager;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Models\Toko;
+use App\Models\User;
 use Filament\Tables;
+use App\Models\Manager;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Resources\Resource;
+use App\Filament\Admin\Resources\ManagerResource\Pages;
 
 class ManagerResource extends Resource
 {
     protected static ?string $model = Manager::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-user-circle';
+    protected static ?string $navigationLabel = 'Manajer Toko';
+    protected static ?string $pluralModelLabel = 'Manager';
+    protected static ?string $modelLabel = 'Manager';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('user_id')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('toko_id')
-                    ->required()
-                    ->numeric(),
+                Forms\Components\Select::make('user_id')
+                    ->label('Pengguna')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->required(),
+
+                Forms\Components\Select::make('toko_id')
+                    ->label('Toko')
+                    ->relationship('toko', 'nama')
+                    ->searchable()
+                    ->required(),
+
                 Forms\Components\TextInput::make('nama_lengkap')
+                    ->label('Nama Lengkap')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('jenis_kelamin')
+
+                Forms\Components\Select::make('jenis_kelamin')
+                    ->label('Jenis Kelamin')
+                    ->options([
+                        'Laki-laki' => 'Laki-laki',
+                        'Perempuan' => 'Perempuan',
+                    ])
                     ->required(),
             ]);
     }
@@ -41,26 +56,32 @@ class ManagerResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('toko_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('nama_lengkap')
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Pengguna')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('jenis_kelamin'),
+
+                Tables\Columns\TextColumn::make('toko.nama')
+                    ->label('Toko')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('nama_lengkap')
+                    ->label('Nama Lengkap')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('jenis_kelamin')
+                    ->label('Jenis Kelamin'),
+
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
@@ -75,7 +96,7 @@ class ManagerResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            // Tambahkan relasi jika perlu
         ];
     }
 

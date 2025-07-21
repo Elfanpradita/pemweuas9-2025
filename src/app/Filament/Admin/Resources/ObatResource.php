@@ -2,42 +2,55 @@
 
 namespace App\Filament\Admin\Resources;
 
-use App\Filament\Admin\Resources\ObatResource\Pages;
-use App\Filament\Admin\Resources\ObatResource\RelationManagers;
-use App\Models\Obat;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Models\Obat;
+use App\Models\Toko;
 use Filament\Tables;
+use App\Models\Apoteker;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Resources\Resource;
+use App\Filament\Admin\Resources\ObatResource\Pages;
 
 class ObatResource extends Resource
 {
     protected static ?string $model = Obat::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-cube'; // ikon lebih relevan
+    protected static ?string $navigationLabel = 'Daftar Obat';
+    protected static ?string $pluralModelLabel = 'Obat';
+    protected static ?string $modelLabel = 'Obat';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('toko_id')
-                    ->required()
-                    ->numeric(),
+                Forms\Components\Select::make('toko_id')
+                    ->label('Toko')
+                    ->relationship('toko', 'nama')
+                    ->searchable()
+                    ->required(),
+
                 Forms\Components\TextInput::make('nama_obat')
+                    ->label('Nama Obat')
                     ->required()
                     ->maxLength(255),
+
                 Forms\Components\TextInput::make('harga')
-                    ->required()
-                    ->numeric(),
+                    ->label('Harga')
+                    ->numeric()
+                    ->required(),
+
                 Forms\Components\TextInput::make('stok')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('apoteker_id')
-                    ->required()
-                    ->numeric(),
+                    ->label('Stok')
+                    ->numeric()
+                    ->required(),
+
+                Forms\Components\Select::make('apoteker_id')
+                    ->label('Apoteker')
+                    ->relationship('apoteker', 'nama_lengkap')
+                    ->searchable()
+                    ->required(),
             ]);
     }
 
@@ -45,31 +58,38 @@ class ObatResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('toko_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('nama_obat')
+                Tables\Columns\TextColumn::make('toko.nama')
+                    ->label('Toko')
                     ->searchable(),
+
+                Tables\Columns\TextColumn::make('nama_obat')
+                    ->label('Nama Obat')
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('harga')
+                    ->label('Harga')
                     ->numeric()
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('stok')
+                    ->label('Stok')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('apoteker_id')
-                    ->numeric()
-                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('apoteker.nama_lengkap')
+                    ->label('Apoteker'),
+
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

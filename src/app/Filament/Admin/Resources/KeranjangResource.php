@@ -2,36 +2,46 @@
 
 namespace App\Filament\Admin\Resources;
 
-use App\Filament\Admin\Resources\KeranjangResource\Pages;
-use App\Filament\Admin\Resources\KeranjangResource\RelationManagers;
-use App\Models\Keranjang;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Models\Obat;
+use App\Models\User;
 use Filament\Tables;
+use Filament\Forms\Form;
+use App\Models\Keranjang;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Resources\Resource;
+use App\Filament\Admin\Resources\KeranjangResource\Pages;
 
 class KeranjangResource extends Resource
 {
     protected static ?string $model = Keranjang::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
+    protected static ?string $navigationLabel = 'Keranjang Belanja';
+    protected static ?string $pluralModelLabel = 'Keranjang';
+    protected static ?string $modelLabel = 'Keranjang';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('user_id')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('obat_id')
-                    ->required()
-                    ->numeric(),
+                Forms\Components\Select::make('user_id')
+                    ->label('Pengguna')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->required(),
+
+                Forms\Components\Select::make('obat_id')
+                    ->label('Obat')
+                    ->relationship('obat', 'nama')
+                    ->searchable()
+                    ->required(),
+
                 Forms\Components\TextInput::make('qty')
+                    ->label('Jumlah')
                     ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->minValue(1),
             ]);
     }
 
@@ -39,26 +49,29 @@ class KeranjangResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('obat_id')
-                    ->numeric()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('user.name')
+                    ->label('Pengguna')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('obat.nama')
+                    ->label('Obat')
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('qty')
-                    ->numeric()
+                    ->label('Jumlah')
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Dibuat')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Diperbarui')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
