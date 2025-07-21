@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
 
         /* ——— D. Jalankan RoleSeeder & seeder lain ——— */
     $this->call([
+        RoleSeeder::class,
+        PermissionSeeder::class,
         TokoSeeder::class,
         ManagerSeeder::class,
         ApotekerSeeder::class,
