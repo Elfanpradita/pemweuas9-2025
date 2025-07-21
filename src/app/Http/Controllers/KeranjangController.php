@@ -11,6 +11,15 @@ use Illuminate\Support\Facades\Auth;
 
 class KeranjangController extends Controller
 {
+    public function index()
+    {
+        $user = Auth::user();
+        $items = Keranjang::with('obat')->where('user_id', $user->id)->get();
+        $cartCount = Keranjang::where('user_id', $user->id)->sum('qty');
+
+        return view('keranjang.index', compact('items', 'cartCount'));
+    }
+
     public function tambah(Request $request)
     {
         $request->validate([
@@ -20,7 +29,6 @@ class KeranjangController extends Controller
 
         $user = Auth::user();
 
-        // Tambahkan atau update keranjang
         Keranjang::updateOrCreate(
             ['user_id' => $user->id, 'obat_id' => $request->obat_id],
             ['qty' => DB::raw("qty + {$request->qty}")]
@@ -29,22 +37,9 @@ class KeranjangController extends Controller
         return redirect('/')->with('success', 'Obat berhasil ditambahkan ke keranjang!');
     }
 
-    public function index()
-    {
-        $user = Auth::user();
-        $items = Keranjang::with('obat')
-            ->where('user_id', $user->id)
-            ->get();
-
-        $cartCount = Keranjang::where('user_id', $user->id)->sum('qty');
-
-        return view('keranjang.index', compact('items', 'cartCount'));
-    }
-
     public function hapus($id)
     {
         $user = Auth::user();
-
         $item = Keranjang::where('id', $id)->where('user_id', $user->id)->first();
 
         if ($item) {
@@ -63,9 +58,7 @@ class KeranjangController extends Controller
         ]);
 
         $user = Auth::user();
-        $items = Keranjang::with('obat')
-            ->where('user_id', $user->id)
-            ->get();
+        $items = Keranjang::with('obat')->where('user_id', $user->id)->get();
 
         if ($items->isEmpty()) {
             return back()->with('error', 'Keranjang masih kosong!');
@@ -73,17 +66,15 @@ class KeranjangController extends Controller
 
         DB::beginTransaction();
         try {
-            // Hitung total
+            // Hitung total & kurangi stok
             $total = 0;
             foreach ($items as $item) {
                 $total += $item->qty * $item->obat->harga;
-
-                // Kurangi stok
                 $item->obat->decrement('stok', $item->qty);
             }
 
-            // Simpan transaksi
-            Transaksi::create([
+            // Simpan transaksi (status pending)
+            $transaksi = Transaksi::create([
                 'user_id' => $user->id,
                 'total' => $total,
                 'metode_pengiriman' => $request->metode_pengiriman,
@@ -94,9 +85,32 @@ class KeranjangController extends Controller
             // Hapus keranjang
             Keranjang::where('user_id', $user->id)->delete();
 
+            // MIDTRANS CONFIG
+            \Midtrans\Config::$serverKey = config('midtrans.server_key');
+            \Midtrans\Config::$isProduction = config('midtrans.is_production');
+            \Midtrans\Config::$isSanitized = true;
+            \Midtrans\Config::$is3ds = true;
+
+            // MIDTRANS PARAMS
+            $params = [
+                'transaction_details' => [
+                    'order_id' => $transaksi->id . '-' . time(),
+                    'gross_amount' => $total,
+                ],
+                'customer_details' => [
+                    'first_name' => $user->name,
+                    'email' => $user->email,
+                ]
+            ];
+
+            $snapToken = \Midtrans\Snap::getSnapToken($params);
+
+            // Simpan snap_token
+            $transaksi->update(['snap_token' => $snapToken]);
+
             DB::commit();
 
-            return redirect('/')->with('success', 'Checkout berhasil! Pesanan diproses.');
+            return view('keranjang.bayar', compact('snapToken', 'transaksi'));
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal checkout: ' . $e->getMessage());

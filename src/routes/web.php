@@ -4,7 +4,9 @@ use Livewire\Livewire;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\KeranjangController;
+use App\Http\Controllers\TransaksiController;
 
 /* NOTE: Do Not Remove
 / Livewire asset handling if using sub folder in domain
@@ -33,3 +35,30 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/keranjang/{id}', [KeranjangController::class, 'hapus'])->name('keranjang.hapus');
     Route::post('/keranjang/checkout', [KeranjangController::class, 'checkout'])->name('keranjang.checkout');
 });
+
+Route::get('/transaksi/{id}', [\App\Http\Controllers\TransaksiController::class, 'show'])
+    ->name('transaksi.show')
+    ->middleware('auth');
+
+Route::post('/midtrans/webhook', [MidtransController::class, 'webhook']);
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/transaksi/{id}', [TransaksiController::class, 'show'])->name('transaksi.show');
+    Route::get('/transaksi/{id}/cek-status', [TransaksiController::class, 'cekStatus'])->name('transaksi.cekStatus');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/transaksi', [TransaksiController::class, 'index'])->name('transaksi.index');
+    Route::get('/transaksi/{id}', [TransaksiController::class, 'show'])->name('transaksi.show');
+    Route::get('/transaksi/{id}/cek-status', [TransaksiController::class, 'cekStatus'])->name('transaksi.cekStatus');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/keranjang', [\App\Http\Controllers\KeranjangController::class, 'index'])->name('keranjang.index');
+    Route::delete('/keranjang/{id}', [\App\Http\Controllers\KeranjangController::class, 'hapus'])->name('keranjang.hapus');
+
+    Route::get('/transaksi', [\App\Http\Controllers\TransaksiController::class, 'index'])->name('transaksi.index');
+    Route::get('/transaksi/{id}', [\App\Http\Controllers\TransaksiController::class, 'show'])->name('transaksi.show');
+    Route::get('/transaksi/{id}/cek', [\App\Http\Controllers\TransaksiController::class, 'cekStatus'])->name('transaksi.cekStatus');
+});
+
