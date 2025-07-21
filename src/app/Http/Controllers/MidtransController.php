@@ -4,40 +4,41 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaksi;
 use Illuminate\Http\Request;
+use App\Mail\TransaksiBerhasilMail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class MidtransController extends Controller
 {
     public function webhook(Request $request)
     {
-        $serverKey = config('midtrans.server_key');
-        $signatureKey = hash('sha512',
-            $request->order_id .
-            $request->status_code .
-            $request->gross_amount .
-            $serverKey
-        );
+        try {
+            \Midtrans\Config::$serverKey = config('midtrans.server_key');
+            \Midtrans\Config::$isProduction = config('midtrans.is_production');
 
-        // Validasi signature biar aman
-        if ($signatureKey !== $request->signature_key) {
-            Log::warning('Midtrans Webhook: Signature tidak valid', $request->all());
-            return response()->json(['message' => 'Invalid signature'], 403);
+            $notif = new \Midtrans\Notification();
+
+            // Ambil order_id asli (sebelum ada time)
+            $orderId = explode('-', $notif->order_id)[0];
+
+            $transaksi = Transaksi::find($orderId);
+
+            if (!$transaksi) {
+                return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
+            }
+
+            $transaksi->update(['status' => $notif->transaction_status]);
+
+            // Kirim email hanya jika settlement
+            if ($notif->transaction_status == 'settlement') {
+                Mail::to($transaksi->user->email)
+                    ->send(new TransaksiBerhasilMail($transaksi));
+            }
+
+            return response()->json(['message' => 'Status diperbarui'], 200);
+        } catch (\Exception $e) {
+            Log::error('Midtrans Webhook Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Error'], 500);
         }
-
-        // Ambil ID transaksi kita (sebelum tanda '-')
-        $transaksiId = explode('-', $request->order_id)[0];
-
-        $transaksi = Transaksi::find($transaksiId);
-        if (!$transaksi) {
-            Log::warning('Midtrans Webhook: Transaksi tidak ditemukan', $request->all());
-            return response()->json(['message' => 'Transaksi not found'], 404);
-        }
-
-        // Update status sesuai Midtrans
-        $transaksi->update(['status' => $request->transaction_status]);
-
-        Log::info('Midtrans Webhook: Status transaksi diperbarui', $request->all());
-
-        return response()->json(['message' => 'OK']);
     }
 }

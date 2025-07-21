@@ -51,69 +51,71 @@ class KeranjangController extends Controller
     }
 
     public function checkout(Request $request)
-    {
-        $request->validate([
-            'metode_pengiriman' => 'required|in:ambil,antar',
-            'alamat' => 'nullable|required_if:metode_pengiriman,antar',
+{
+    $request->validate([
+        'metode_pengiriman' => 'required|in:ambil,antar',
+        'alamat' => 'nullable|required_if:metode_pengiriman,antar',
+    ]);
+
+    $user = Auth::user();
+    $items = Keranjang::with('obat')->where('user_id', $user->id)->get();
+
+    if ($items->isEmpty()) {
+        return back()->with('error', 'Keranjang masih kosong!');
+    }
+
+    DB::beginTransaction();
+    try {
+        // Hitung total & kurangi stok
+        $total = 0;
+        foreach ($items as $item) {
+            $total += $item->qty * $item->obat->harga;
+            $item->obat->decrement('stok', $item->qty);
+        }
+
+        // Simpan transaksi
+        $transaksi = Transaksi::create([
+            'user_id' => $user->id,
+            'total' => $total,
+            'metode_pengiriman' => $request->metode_pengiriman,
+            'alamat' => $request->metode_pengiriman == 'antar' ? $request->alamat : '-',
+            'status' => 'pending',
         ]);
 
-        $user = Auth::user();
-        $items = Keranjang::with('obat')->where('user_id', $user->id)->get();
+        // Hapus keranjang
+        Keranjang::where('user_id', $user->id)->delete();
 
-        if ($items->isEmpty()) {
-            return back()->with('error', 'Keranjang masih kosong!');
-        }
+        // MIDTRANS CONFIG
+        \Midtrans\Config::$serverKey = config('midtrans.server_key');
+        \Midtrans\Config::$isProduction = config('midtrans.is_production');
+        \Midtrans\Config::$isSanitized = true;
+        \Midtrans\Config::$is3ds = true;
 
-        DB::beginTransaction();
-        try {
-            // Hitung total & kurangi stok
-            $total = 0;
-            foreach ($items as $item) {
-                $total += $item->qty * $item->obat->harga;
-                $item->obat->decrement('stok', $item->qty);
-            }
+        // MIDTRANS PARAMS
+        $params = [
+            'transaction_details' => [
+                'order_id' => $transaksi->id . '-' . time(),
+                'gross_amount' => $total,
+            ],
+            'customer_details' => [
+                'first_name' => $user->name,
+                'email' => $user->email,
+            ]
+        ];
 
-            // Simpan transaksi (status pending)
-            $transaksi = Transaksi::create([
-                'user_id' => $user->id,
-                'total' => $total,
-                'metode_pengiriman' => $request->metode_pengiriman,
-                'alamat' => $request->metode_pengiriman == 'antar' ? $request->alamat : '-',
-                'status' => 'pending',
-            ]);
+        $snapToken = \Midtrans\Snap::getSnapToken($params);
+        $transaksi->update(['snap_token' => $snapToken]);
 
-            // Hapus keranjang
-            Keranjang::where('user_id', $user->id)->delete();
+        DB::commit();
 
-            // MIDTRANS CONFIG
-            \Midtrans\Config::$serverKey = config('midtrans.server_key');
-            \Midtrans\Config::$isProduction = config('midtrans.is_production');
-            \Midtrans\Config::$isSanitized = true;
-            \Midtrans\Config::$is3ds = true;
+        // ✅ KIRIM EMAIL
+        \Mail::to($user->email)->send(new \App\Mail\TransaksiBerhasilMail($transaksi));
 
-            // MIDTRANS PARAMS
-            $params = [
-                'transaction_details' => [
-                    'order_id' => $transaksi->id . '-' . time(),
-                    'gross_amount' => $total,
-                ],
-                'customer_details' => [
-                    'first_name' => $user->name,
-                    'email' => $user->email,
-                ]
-            ];
-
-            $snapToken = \Midtrans\Snap::getSnapToken($params);
-
-            // Simpan snap_token
-            $transaksi->update(['snap_token' => $snapToken]);
-
-            DB::commit();
-
-            return view('keranjang.bayar', compact('snapToken', 'transaksi'));
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Gagal checkout: ' . $e->getMessage());
-        }
+        return view('keranjang.bayar', compact('snapToken', 'transaksi'));
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->with('error', 'Gagal checkout: ' . $e->getMessage());
     }
+}
+
 }
