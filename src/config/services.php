@@ -41,4 +41,9 @@ return [
         'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
     ],
 
+    'whatsapp' => [
+        'url' => env('WHATSAPP_API_URL'),
+    ],
+
+
 ];

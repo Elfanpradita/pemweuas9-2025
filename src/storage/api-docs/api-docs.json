@@ -1,0 +1,187 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Dokumentasi API Pemweuas9",
+        "description": "Dokumentasi API untuk Keranjang, Midtrans, dan WhatsApp Notifikasi",
+        "contact": {
+            "email": "support@pemweuas9.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://pemweuas9.test",
+            "description": "Server API Utama"
+        }
+    ],
+    "paths": {
+        "/keranjang": {
+            "get": {
+                "tags": [
+                    "Keranjang"
+                ],
+                "summary": "Menampilkan keranjang user",
+                "operationId": "c3fe91ac6cb8d913abead927ee6e977d",
+                "responses": {
+                    "200": {
+                        "description": "Berhasil mengambil daftar keranjang"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/keranjang/tambah": {
+            "post": {
+                "tags": [
+                    "Keranjang"
+                ],
+                "summary": "Menambahkan obat ke keranjang",
+                "operationId": "75e6570ffe335a1b6476ef8b284ae557",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "obat_id",
+                                    "qty"
+                                ],
+                                "properties": {
+                                    "obat_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "qty": {
+                                        "type": "integer",
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Obat berhasil ditambahkan ke keranjang"
+                    },
+                    "400": {
+                        "description": "Validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/keranjang/hapus/{id}": {
+            "delete": {
+                "tags": [
+                    "Keranjang"
+                ],
+                "summary": "Menghapus item dari keranjang",
+                "operationId": "b9910f111556a95bb3fc62dc41dfeff7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID item keranjang",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Item dihapus dari keranjang"
+                    },
+                    "404": {
+                        "description": "Item tidak ditemukan"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/keranjang/checkout": {
+            "post": {
+                "tags": [
+                    "Keranjang"
+                ],
+                "summary": "Checkout keranjang dan membuat transaksi",
+                "operationId": "59575e457df9c790617892cfb5a7bc3b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "metode_pengiriman"
+                                ],
+                                "properties": {
+                                    "metode_pengiriman": {
+                                        "type": "string",
+                                        "enum": [
+                                            "ambil",
+                                            "antar"
+                                        ],
+                                        "example": "antar"
+                                    },
+                                    "alamat": {
+                                        "type": "string",
+                                        "example": "Jl. Mawar No. 10"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Berhasil checkout dan mengembalikan Snap Token Midtrans"
+                    },
+                    "400": {
+                        "description": "Validasi gagal"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Keranjang",
+            "description": "API untuk mengelola keranjang belanja"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "sanctum": {
+                "type": "apiKey",
+                "description": "Enter token in format (Bearer <token>)",
+                "name": "Authorization",
+                "in": "header"
+            }
+        }
+    },
+    "security": [
+        {
+            "sanctum": []
+        }
+    ]
+}

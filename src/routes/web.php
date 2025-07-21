@@ -1,6 +1,7 @@
 <?php
 
 use Livewire\Livewire;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -63,14 +64,3 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/transaksi/{id}/cek', [\App\Http\Controllers\TransaksiController::class, 'cekStatus'])->name('transaksi.cekStatus');
 });
 
-Route::get('/test-email', function () {
-    try {
-        Mail::raw('Ini email percobaan dari Laravel.', function ($message) {
-            $message->to('elfanpradita378@gmail.com')
-                    ->subject('Tes Kirim Email Laravel');
-        });
-        return '✅ Email berhasil dikirim!';
-    } catch (\Exception $e) {
-        return '❌ Gagal kirim email: ' . $e->getMessage();
-    }
-});
