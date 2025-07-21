@@ -24,12 +24,9 @@ Aplikasi ini dibangun menggunakan Laravel 12 dan Filament v3 untuk memudahkan pe
 - Login admin
 - CRUD data obat
 - Proses transaksi
-- Update status pengiriman
 
 ### Manajer (Backend - Filament)
-- Login admin
-- Lihat laporan penjualan
-- Export data transaksi
-- Monitoring performa toko
+- Login
+- Monitoring toko
 
 ## 📦 Ronaldo
